@@ -452,11 +452,17 @@ This starter pack is licensed under the following terms:
 Copyright (c) 2026 Md. Ashiqur Rahman Tonmoy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to copy
-and use the Software, subject to the following conditions:
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, subject to the following conditions:
 
-- You are permitted to copy and use the Software.
-- You are NOT permitted to modify, alter, adapt, or create derivative works of the Software without explicit written permission from the copyright holder.
-- The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+- You are free to copy, use, modify, and build upon this Software AFTER disconnecting
+  it from the original author's repository and connecting/pushing it to your own GitHub repository.
+- Direct modifications, unauthorized commits, or direct pushes to the author's original repository
+  are strictly prohibited.
+- The above copyright notice and this permission notice shall be included in all copies
+  or substantial portions of the Software.
 ```
+
 
