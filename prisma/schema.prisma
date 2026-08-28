@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String     @id @default(auto()) @map("_id") @db.ObjectId
+  fullName          String?
+  userName          String?
+  email             String     @unique
+  phoneNumber       String?
+  password          String?
+  profileImage      String?
+  coverImage        String?
+  role              UserRole   @default(USER)
+  status            UserStatus @default(ACTIVE)
+  isSocialLogin     Boolean    @default(false)
+  emailVerified     Boolean    @default(false)
+  isBlocked         Boolean    @default(false)
+  isDeleted         Boolean    @default(false)
+  isApproved        Boolean    @default(false)
+  isProfileComplete Boolean?
+  lat               Float      @default(0.0)
+  lon               Float      @default(0.0)
+  suspendedUntil    DateTime?
+  lastLoginAt       DateTime?
+  expirationOtp     DateTime?
+  otp               Int?
+  fcmToken          String?
+  onBoarding        Boolean    @default(false)
+  accountLink       String?
+  stripeAccountId   String?
+  customerId        String?
+  paymentMethodId   String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  //Relation
+  following             Follow[]            @relation("Followers")
+  followers             Follow[]            @relation("Following")
+  Notification          Notification[]      @relation("UserRelation")
+  roomsAsSender         Room[]              @relation("RoomSender")
+  roomsAsReceiver       Room[]              @relation("RoomReceiver")
+  friendRequestSender   FriendRequest[]     @relation("friendRequestSender")
+  friendRequestReceiver FriendRequest[]     @relation("friendRequestReceiver")
+  subscriptionOffers    Subscriptionoffer[]
+  userSubscriptions     Usersubscription[]
+  socialAccounts        SocialAccount[]
+
+  @@map("users")
+}
+
+model SocialAccount {
+  id         String             @id @default(auto()) @map("_id") @db.ObjectId
+  provider   SocialProviderEnum
+  providerId String
+  userId     String             @db.ObjectId
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime           @default(now())
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("social_accounts")
+}
+
+model Follow {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  followerId  String   @db.ObjectId
+  followingId String   @db.ObjectId
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Following", fields: [followerId], references: [id])
+  following User @relation("Followers", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId]) // Prevent duplicate follows
+}
+
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  title     String
+  body      String
+  data      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //Relation
+  user User @relation("UserRelation", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("Notifications")
+}
+
+model Room {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String   @db.ObjectId
+  receiverId String   @db.ObjectId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  //Relation
+  sender   User   @relation("RoomSender", fields: [senderId], references: [id])
+  receiver User   @relation("RoomReceiver", fields: [receiverId], references: [id])
+  chat     Chat[]
+
+  @@map("rooms")
+}
+
+model Chat {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String   @db.ObjectId
+  receiverId String   @db.ObjectId
+  roomId     String   @db.ObjectId
+  message    String?
+  imageUrl   String?
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  //Relation
+  room Room @relation(fields: [roomId], references: [id])
+
+  @@index([roomId, receiverId])
+  @@map("chats")
+}
+
+model FriendRequest {
+  id         String                  @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String                  @db.ObjectId
+  receiverId String                  @db.ObjectId
+  status     ConnectionRequestStatus @default(PENDING)
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+  ignore     String?
+
+  //Relation
+  requestSender   User @relation("friendRequestSender", fields: [senderId], references: [id])
+  requestReceiver User @relation("friendRequestReceiver", fields: [receiverId], references: [id])
+
+  @@map("FriendRequests")
+}
+
+model Subscriptionoffer {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy  String     @db.ObjectId
+  planName   String
+  planType   String
+  facilities String[]   @default([])
+  price      Float
+  duration   Int
+  details    String?
+  status     UserStatus @default(ACTIVE)
+  isDeleted  Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  //relation
+  creator          User               @relation(fields: [createdBy], references: [id])
+  UserSubscription Usersubscription[]
+
+  @@index([createdBy])
+  @@map("subscription_offers")
+}
+
+model Usersubscription {
+  id                  String             @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String             @db.ObjectId
+  subscriptionOfferId String             @db.ObjectId
+  startDate           DateTime           @default(now())
+  endDate             DateTime           @default(now())
+  paymentId           String             @default("")
+  duration            Int?               @default(30)
+  paymentStatus       PaymentStatus      @default(PENDING)
+  status              SubscriptionStatus @default(PENDING)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  //relation
+  subscriptionOffer Subscriptionoffer @relation(fields: [subscriptionOfferId], references: [id])
+  user              User              @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([subscriptionOfferId])
+  @@map("user_subscriptions")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BLOCKED
+  DELETED
+  REJECTED
+}
+
+enum SocialProviderEnum {
+  GOOGLE
+  FACEBOOK
+}
+
+enum ConnectionRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  PAID
+  CANCELLED
+  FAILED
+}
